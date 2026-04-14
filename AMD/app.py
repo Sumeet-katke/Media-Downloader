@@ -54,6 +54,7 @@ def download_video(url):
             "best[ext=mp4]"
         ),
         "merge_output_format": "mp4",
+        "recodevideo": "mp4",
         "postprocessors": [{
             "key": "FFmpegVideoConvertor",
             "preferedformat": "mp4"
@@ -64,14 +65,20 @@ def download_video(url):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
-        # Get the final downloaded file, including merged mp4 output.
+        # Prefer the final MP4 output path.
         file_id = info["id"]
+        expected_mp4 = os.path.join(DOWNLOAD_DIR, f"{file_id}.mp4")
+
+        if os.path.exists(expected_mp4):
+            return expected_mp4
+
+        # Fallback: pick the newest file for this id if mp4 wasn't produced.
         matches = glob.glob(os.path.join(DOWNLOAD_DIR, f"{file_id}.*"))
 
         if not matches:
             raise FileNotFoundError(f"Downloaded file not found for id {file_id}")
 
-        file_path = next((path for path in matches if path.endswith(".mp4")), matches[0])
+        file_path = max(matches, key=os.path.getmtime)
 
         return file_path
 
