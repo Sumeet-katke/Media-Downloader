@@ -1,9 +1,13 @@
 # 1. Imports
 from flask import Flask, request, jsonify, send_file
-import yt_dlp
+import yt_dlp, os
 
 # 2. Create app instance
 app = Flask(__name__)
+
+# Describing the Download folder 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 
 # 3. Routes
 @app.route("/", methods=["GET"])
@@ -22,15 +26,21 @@ def download():
     # 6. Debug print
     print("Received URL:", url)
 
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
     file_path = download_video(url)
 
     print("Downloaded file:", file_path)
 
-    return send_file(file_path, as_attachment=True)
+    response = send_file(file_path, as_attachment=True)
+
+    os.remove(file_path)
+
+    return response 
 
 def download_video(url):
     ydl_opts = {
-        "outtmpl": "downloads/%(id)s.%(ext)s",
+        "outtmpl": os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s"),
         "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
         "merge_output_format": "mp4"
     }

@@ -1,0 +1,5 @@
+.venv
+__pycache__
+AMD/__pycache__
+AMD/downloads
+*.pyc
