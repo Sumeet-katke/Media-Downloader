@@ -46,7 +46,11 @@ def download_video(url):
             "bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
             "best[ext=mp4]"
         ),
-        "merge_output_format": "mp4"
+        "merge_output_format": "mp4",
+        "postprocessors": [{
+            "key": "FFmpegVideoConvertor",
+            "preferedformat": "mp4"
+        }]
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
