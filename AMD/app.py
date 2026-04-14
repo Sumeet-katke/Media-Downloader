@@ -1,6 +1,6 @@
 # 1. Imports
 from flask import Flask, request, jsonify, send_file
-import yt_dlp, os
+import yt_dlp, os, glob
 
 # 2. Create app instance
 app = Flask(__name__)
@@ -23,6 +23,9 @@ def download():
     # 5. Extract URL
     url = data.get("url")
 
+    if not url:
+        return jsonify({"error": "Missing url"}), 400
+
     # 6. Debug print
     print("Received URL:", url)
 
@@ -34,7 +37,11 @@ def download():
 
     response = send_file(file_path, as_attachment=True)
 
-    os.remove(file_path)
+    def cleanup():
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    response.call_on_close(cleanup)
 
     return response 
 
@@ -56,8 +63,14 @@ def download_video(url):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
-        # YOU need to understand this line
-        file_path = ydl.prepare_filename(info)
+        # Get the final downloaded file, including merged mp4 output.
+        file_id = info["id"]
+        matches = glob.glob(os.path.join(DOWNLOAD_DIR, f"{file_id}.*"))
+
+        if not matches:
+            raise FileNotFoundError(f"Downloaded file not found for id {file_id}")
+
+        file_path = next((path for path in matches if path.endswith(".mp4")), matches[0])
 
         return file_path
 
